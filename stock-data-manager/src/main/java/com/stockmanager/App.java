@@ -84,10 +84,10 @@ public class App {
 
            /* {
                 "1. open" : "203.4000",
-                    "2. high" : "205.3400",
-                    "3. low" : "202.1600",
-                    "4. close" : "202.9200",
-                    "5. volume" : "44155079"
+                "2. high" : "205.3400",
+                "3. low" : "202.1600",
+                "4. close" : "202.9200",
+                "5. volume" : "44155079"
             }*/
             for (Map.Entry<String, com.google.gson.JsonElement> entry : timeSeries.entrySet()) {
                 String date = entry.getKey();
