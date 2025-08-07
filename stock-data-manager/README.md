@@ -56,6 +56,14 @@ The application will then:
 4.  Store the daily data in a separate collection for each ticker.
 5.  Calculate and store the 20-day and 50-day Simple Moving Averages (SMA) for each day.
 
+### Resetting the Data
+
+To drop all collections except for the `stocks_list` collection, run the following command:
+
+```bash
+mvn exec:java -Dexec.mainClass="com.stockmanager.App" -Dexec.args="reset"
+```
+
 ## Database Schema
 
 ### `stocks_list` Collection

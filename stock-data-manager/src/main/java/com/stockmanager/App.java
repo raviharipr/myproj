@@ -21,18 +21,25 @@ import java.util.Map;
 
 public class App {
 
-    private static final String API_KEY = "B1N8YWVX5VOGEED8"; // Replace with your Alpha Vantage API key
+    private static final String API_KEY = "YOUR_API_KEY"; // Replace with your Alpha Vantage API key
     private static final String DATABASE_NAME = "stock_db";
     private static final String STOCKS_LIST_COLLECTION = "stocks_list";
 
     public static void main(String[] args) {
-        if ("API_KEY".equals(API_KEY)) {
+        if (args.length > 0 && "reset".equals(args[0])) {
+            try (MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017")) {
+                MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+                resetData(database);
+            }
+            return;
+        }
+
+        if ("YOUR_API_KEY".equals(API_KEY)) {
             System.err.println("Error: Please replace 'YOUR_API_KEY' with your actual Alpha Vantage API key.");
             return;
         }
-// mongo connection string with localhost and username and password
 
-        try (MongoClient mongoClient = MongoClients.create("mongodb://root:root1@localhost:27017/?authSource=admin")) {
+        try (MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017")) {
             MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
 
             List<String> stockTickers = getStockTickers(database);
@@ -49,6 +56,17 @@ public class App {
             System.err.println("An error occurred: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private static void resetData(MongoDatabase database) {
+        System.out.println("Resetting data...");
+        for (String collectionName : database.listCollectionNames()) {
+            if (!STOCKS_LIST_COLLECTION.equals(collectionName)) {
+                database.getCollection(collectionName).drop();
+                System.out.println("Dropped collection: " + collectionName);
+            }
+        }
+        System.out.println("Data reset complete.");
     }
 
     private static List<String> getStockTickers(MongoDatabase database) {
@@ -82,21 +100,14 @@ public class App {
 
             MongoCollection<Document> stockCollection = database.getCollection(ticker);
 
-           /* {
-                "1. open" : "203.4000",
-                "2. high" : "205.3400",
-                "3. low" : "202.1600",
-                "4. close" : "202.9200",
-                "5. volume" : "44155079"
-            }*/
             for (Map.Entry<String, com.google.gson.JsonElement> entry : timeSeries.entrySet()) {
                 String date = entry.getKey();
                 JsonObject dayData = entry.getValue().getAsJsonObject();
                 Document stockDocument = new Document("date", date)
                         .append("open", dayData.get("1. open").getAsDouble())
-                        .append("high", dayData.get("2. high").getAsDouble())
-                        .append("low", dayData.get("3. low").getAsDouble())
-                        .append("close", dayData.get("4. close").getAsDouble());
+                        .append("close", dayData.get("2. close").getAsDouble())
+                        .append("high", dayData.get("3. high").getAsDouble())
+                        .append("low", dayData.get("4. low").getAsDouble());
 
                 if (stockCollection.find(new Document("date", date)).first() == null) {
                     stockCollection.insertOne(stockDocument);
