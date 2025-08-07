@@ -2,6 +2,8 @@ package com.stockmanager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class ConfigLoader {
@@ -25,5 +27,18 @@ public class ConfigLoader {
 
     public String getProperty(String key) {
         return properties.getProperty(key);
+    }
+
+    public List<Integer> getIntegerListProperty(String key) {
+        String property = getProperty(key);
+        if (property == null || property.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        String[] values = property.split(",");
+        List<Integer> intValues = new ArrayList<>();
+        for (String value : values) {
+            intValues.add(Integer.parseInt(value.trim()));
+        }
+        return intValues;
     }
 }

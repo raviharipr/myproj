@@ -37,6 +37,10 @@ The application is configured using the `config.properties` file located in `src
 
     # Alpha Vantage API Key
     alpha.vantage.api.key=YOUR_API_KEY
+
+    # Moving Average Periods (comma-separated)
+    sma.periods=20,50
+    ema.periods=20,50
     ```
 
 3.  **Replace `YOUR_API_KEY` with your actual Alpha Vantage API key.**
@@ -66,8 +70,8 @@ The application will then:
 2.  Read the stock tickers from the `stocks_list` collection.
 3.  Fetch daily price data for each ticker from Alpha Vantage.
 4.  Store the daily data in a separate collection for each ticker.
-5.  Calculate and store the 20-day and 50-day Simple Moving Averages (SMA) for each day.
-6.  Calculate and store the 20-day and 50-day Exponential Moving Averages (EMA) for each day.
+5.  Calculate and store the Simple Moving Averages (SMA) for the periods specified in `sma.periods`.
+6.  Calculate and store the Exponential Moving Averages (EMA) for the periods specified in `ema.periods`.
 
 ### Resetting the Data
 
@@ -90,7 +94,5 @@ mvn exec:java -Dexec.mainClass="com.stockmanager.App" -Dexec.args="reset"
 -   `close` (Double): The closing price.
 -   `high` (Double): The highest price.
 -   `low` (Double): The lowest price.
--   `20_day_sma` (Double): The 20-day Simple Moving Average (optional).
--   `50_day_sma` (Double): The 50-day Simple Moving Average (optional).
--   `20_day_ema` (Double): The 20-day Exponential Moving Average (optional).
--   `50_day_ema` (Double): The 50-day Exponential Moving Average (optional).
+-   `<period>_day_sma` (Double): The Simple Moving Average for the given period (e.g., `20_day_sma`).
+-   `<period>_day_ema` (Double): The Exponential Moving Average for the given period (e.g., `20_day_ema`).
