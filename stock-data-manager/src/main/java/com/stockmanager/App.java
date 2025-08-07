@@ -21,32 +21,33 @@ import java.util.Map;
 
 public class App {
 
-    private static final String API_KEY = "YOUR_API_KEY"; // Replace with your Alpha Vantage API key
-    private static final String DATABASE_NAME = "stock_db";
-    private static final String STOCKS_LIST_COLLECTION = "stocks_list";
+    private static ConfigLoader configLoader;
 
     public static void main(String[] args) {
+        configLoader = new ConfigLoader();
+
         if (args.length > 0 && "reset".equals(args[0])) {
-            try (MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017")) {
-                MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            try (MongoClient mongoClient = MongoClients.create(configLoader.getProperty("mongo.uri"))) {
+                MongoDatabase database = mongoClient.getDatabase(configLoader.getProperty("mongo.database"));
                 resetData(database);
             }
             return;
         }
 
-        if ("YOUR_API_KEY".equals(API_KEY)) {
-            System.err.println("Error: Please replace 'YOUR_API_KEY' with your actual Alpha Vantage API key.");
+        String apiKey = configLoader.getProperty("alpha.vantage.api.key");
+        if ("YOUR_API_KEY".equals(apiKey)) {
+            System.err.println("Error: Please replace 'YOUR_API_KEY' with your actual Alpha Vantage API key in the config.properties file.");
             return;
         }
 
-        try (MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017")) {
-            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+        try (MongoClient mongoClient = MongoClients.create(configLoader.getProperty("mongo.uri"))) {
+            MongoDatabase database = mongoClient.getDatabase(configLoader.getProperty("mongo.database"));
 
             List<String> stockTickers = getStockTickers(database);
 
             for (String ticker : stockTickers) {
                 try {
-                    fetchAndStoreStockData(database, ticker);
+                    fetchAndStoreStockData(database, ticker, apiKey);
                     calculateAndStoreMovingAverages(database, ticker);
                 } catch (IOException e) {
                     System.err.println("Error processing " + ticker + ": " + e.getMessage());
@@ -60,8 +61,9 @@ public class App {
 
     private static void resetData(MongoDatabase database) {
         System.out.println("Resetting data...");
+        String stocksListCollectionName = configLoader.getProperty("mongo.stocks_list_collection");
         for (String collectionName : database.listCollectionNames()) {
-            if (!STOCKS_LIST_COLLECTION.equals(collectionName)) {
+            if (!stocksListCollectionName.equals(collectionName)) {
                 database.getCollection(collectionName).drop();
                 System.out.println("Dropped collection: " + collectionName);
             }
@@ -70,7 +72,8 @@ public class App {
     }
 
     private static List<String> getStockTickers(MongoDatabase database) {
-        MongoCollection<Document> stocksListCollection = database.getCollection(STOCKS_LIST_COLLECTION);
+        String stocksListCollectionName = configLoader.getProperty("mongo.stocks_list_collection");
+        MongoCollection<Document> stocksListCollection = database.getCollection(stocksListCollectionName);
         List<String> tickers = new ArrayList<>();
         for (Document doc : stocksListCollection.find()) {
             tickers.add(doc.getString("ticker"));
@@ -78,10 +81,10 @@ public class App {
         return tickers;
     }
 
-    private static void fetchAndStoreStockData(MongoDatabase database, String ticker) throws IOException {
+    private static void fetchAndStoreStockData(MongoDatabase database, String ticker, String apiKey) throws IOException {
         System.out.println("Fetching data for " + ticker);
         OkHttpClient client = new OkHttpClient();
-        String url = String.format("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, API_KEY);
+        String url = String.format("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, apiKey);
 
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {

@@ -21,17 +21,28 @@ This Java application retrieves, stores, and analyzes daily stock market data. I
 
 ## Configuration
 
-1.  **API Key:**
-    - Open the `src/main/java/com/stockmanager/App.java` file.
-    - Replace `"YOUR_API_KEY"` with your actual Alpha Vantage API key.
+The application is configured using the `config.properties` file located in `src/main/resources`.
 
-2.  **MongoDB:**
-    - The application connects to a MongoDB instance at `mongodb://localhost:27017`.
-    - The database used is `stock_db`.
-    - Ensure your MongoDB server is running before starting the application.
+1.  **Create the configuration file:**
+    - If it doesn't exist, create a file named `config.properties` inside the `src/main/resources` directory.
 
-3.  **Stock Tickers:**
-    - The application retrieves the list of stock tickers from the `stocks_list` collection in the `stock_db` database.
+2.  **Edit the configuration file:**
+    - Open the `config.properties` file and add the following properties:
+
+    ```properties
+    # MongoDB Configuration
+    mongo.uri=mongodb://localhost:27017
+    mongo.database=stock_db
+    mongo.stocks_list_collection=stocks_list
+
+    # Alpha Vantage API Key
+    alpha.vantage.api.key=YOUR_API_KEY
+    ```
+
+3.  **Replace `YOUR_API_KEY` with your actual Alpha Vantage API key.**
+
+4.  **Stock Tickers:**
+    - The application retrieves the list of stock tickers from the collection specified by `mongo.stocks_list_collection` in the database specified by `mongo.database`.
     - Each document in this collection should have a `ticker` field with the stock symbol (e.g., "AAPL").
     - **Example document:**
       ```json
@@ -40,6 +51,7 @@ This Java application retrieves, stores, and analyzes daily stock market data. I
       }
       ```
     - You need to populate this collection with the tickers you want to track.
+
 
 ## Running the Application
 
