@@ -67,6 +67,7 @@ The application will then:
 3.  Fetch daily price data for each ticker from Alpha Vantage.
 4.  Store the daily data in a separate collection for each ticker.
 5.  Calculate and store the 20-day and 50-day Simple Moving Averages (SMA) for each day.
+6.  Calculate and store the 20-day and 50-day Exponential Moving Averages (EMA) for each day.
 
 ### Resetting the Data
 
@@ -91,3 +92,5 @@ mvn exec:java -Dexec.mainClass="com.stockmanager.App" -Dexec.args="reset"
 -   `low` (Double): The lowest price.
 -   `20_day_sma` (Double): The 20-day Simple Moving Average (optional).
 -   `50_day_sma` (Double): The 50-day Simple Moving Average (optional).
+-   `20_day_ema` (Double): The 20-day Exponential Moving Average (optional).
+-   `50_day_ema` (Double): The 50-day Exponential Moving Average (optional).

@@ -49,6 +49,7 @@ public class App {
                 try {
                     fetchAndStoreStockData(database, ticker, apiKey);
                     calculateAndStoreMovingAverages(database, ticker);
+                    calculateAndStoreExponentialMovingAverages(database, ticker);
                 } catch (IOException e) {
                     System.err.println("Error processing " + ticker + ": " + e.getMessage());
                 }
@@ -158,5 +159,54 @@ public class App {
             sum += prices.get(startIndex + i);
         }
         return sum / period;
+    }
+
+    private static void calculateAndStoreExponentialMovingAverages(MongoDatabase database, String ticker) {
+        System.out.println("Calculating exponential moving averages for " + ticker);
+        MongoCollection<Document> stockCollection = database.getCollection(ticker);
+        List<Document> dailyData = stockCollection.find().sort(Sorts.ascending("date")).into(new ArrayList<>());
+
+        if (dailyData.size() < 20) {
+            System.out.println("Not enough data to calculate 20-day EMA for " + ticker);
+            return;
+        }
+
+        List<Double> closePrices = new ArrayList<>();
+        for (Document doc : dailyData) {
+            closePrices.add(doc.getDouble("close"));
+        }
+
+        double ema20 = -1;
+        double ema50 = -1;
+
+        for (int i = 0; i < dailyData.size(); i++) {
+            Document currentDoc = dailyData.get(i);
+            String date = currentDoc.getString("date");
+
+            if (i == 19) {
+                ema20 = calculateSMA(closePrices, 0, 20);
+            } else if (i > 19) {
+                ema20 = calculateEMA(closePrices.get(i), ema20, 20);
+            }
+
+            if (i == 49) {
+                ema50 = calculateSMA(closePrices, 0, 50);
+            } else if (i > 49) {
+                ema50 = calculateEMA(closePrices.get(i), ema50, 50);
+            }
+
+            if (ema20 != -1) {
+                stockCollection.updateOne(Filters.eq("date", date), Updates.set("20_day_ema", ema20));
+            }
+            if (ema50 != -1) {
+                stockCollection.updateOne(Filters.eq("date", date), Updates.set("50_day_ema", ema50));
+            }
+        }
+        System.out.println("Exponential moving averages for " + ticker + " calculated and stored.");
+    }
+
+    private static double calculateEMA(double currentPrice, double previousEma, int period) {
+        double multiplier = 2.0 / (period + 1);
+        return (currentPrice - previousEma) * multiplier + previousEma;
     }
 }
