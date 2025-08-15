@@ -15,16 +15,25 @@ import okhttp3.Response;
 import org.bson.Document;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App {
 
     private static ConfigLoader configLoader;
 
     public static void main(String[] args) {
+
+        // Build logic to capture the local execution time in human readable form
+        long startTime = System.currentTimeMillis();
+
+
         configLoader = new ConfigLoader();
 
         if (args.length > 0 && "reset".equals(args[0])) {
@@ -46,19 +55,58 @@ public class App {
 
             List<String> stockTickers = getStockTickers(database);
 
+            // Create a thread pool with the specified number of threads
+            ExecutorService executorServiceToProcess = Executors.newFixedThreadPool(stockTickers.size() + 1);
+            // List to hold CompletableFuture instances for each JSON file
+            List<CompletableFuture<Void>> futuresToProcessData = new ArrayList<>();
+
             for (String ticker : stockTickers) {
+                CompletableFuture<Void> futureJobToProcessData = CompletableFuture.runAsync(() -> {
                 try {
-                    fetchAndStoreStockData(database, ticker, apiKey);
-                    calculateAndStoreMovingAverages(database, ticker);
-                    calculateAndStoreExponentialMovingAverages(database, ticker);
+                            fetchAndProcessStockData(database, ticker, apiKey);
                 } catch (IOException e) {
-                    System.err.println("Error processing " + ticker + ": " + e.getMessage());
+                            e.printStackTrace();
                 }
+                    }, executorServiceToProcess);
+                    futuresToProcessData.add(futureJobToProcessData);
             }
+
+            // Combine all CompletableFuture instances into a single CompletableFuture
+            CompletableFuture<Void> allTickersToProcess = CompletableFuture.allOf(futuresToProcessData.toArray(new CompletableFuture[0]));
+            // Block and wait for all tasks to complete
+            try {
+                allTickersToProcess.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // Shut down the thread pool
+                executorServiceToProcess.shutdown();
+            }
+
+
         } catch (Exception e) {
             System.err.println("An error occurred: " + e.getMessage());
             e.printStackTrace();
         }
+
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+        // executionTime to be printed in Hours : Minutes : seconds : millseconds format
+        long hours = executionTime / (1000 * 60 * 60);
+        long minutes = (executionTime % (1000 * 60 * 60)) / (100);
+        long seconds = (executionTime % (1000 * 60 * 60)) / (1000 * 60);
+        long milliseconds = (executionTime % (1000 * 60 * 60)) % (1000 * 60);
+        System.out.println("Execution time: " + hours + " : " + minutes + " : " + seconds + " : " + milliseconds );
+    }
+
+    private static void fetchAndProcessStockData(MongoDatabase database, String ticker, String apiKey) throws IOException {
+        fetchAndStoreStockData(database, ticker, apiKey);
+        calculateAndStoreMovingAverages(database, ticker);
+        calculateAndStoreExponentialMovingAverages(database, ticker);
+        calculateTheInteceptions(database, ticker);
+    }
+
+    private static void calculateTheInteceptions(MongoDatabase database, String ticker) {
     }
 
     private static void resetData(MongoDatabase database) {
