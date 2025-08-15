@@ -110,9 +110,10 @@ public class App {
                 JsonObject dayData = entry.getValue().getAsJsonObject();
                 Document stockDocument = new Document("date", date)
                         .append("open", dayData.get("1. open").getAsDouble())
-                        .append("close", dayData.get("2. close").getAsDouble())
-                        .append("high", dayData.get("3. high").getAsDouble())
-                        .append("low", dayData.get("4. low").getAsDouble());
+                        .append("close", dayData.get("2. high").getAsDouble())
+                        .append("high", dayData.get("3. low").getAsDouble())
+                        .append("low", dayData.get("4. close").getAsDouble())
+                        .append("volume", dayData.get("5. volume").getAsDouble());
 
                 if (stockCollection.find(new Document("date", date)).first() == null) {
                     stockCollection.insertOne(stockDocument);
